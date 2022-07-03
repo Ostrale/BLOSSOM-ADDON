@@ -15,7 +15,7 @@ https://addons.mozilla.org/firefox/addon/blossom-addon/
 
 ## Introduction 
 
-As (nom) told you, digital devices create more pollution than we imagine:  
+Digital devices create more pollution than we imagine:  
 
 In fact, during all its lifespan digital objects pollute, and these devices create 4 times more CO2 than the whole of France.  
 
