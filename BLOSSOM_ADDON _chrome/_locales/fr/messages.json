@@ -1,0 +1,123 @@
+{
+  	"extensionName": {
+    	"message": "BLOSSOM ADDON",
+    	"description": "Name of the extension."
+  	},
+
+  	"extensionDescription": {
+    	"message": "Luttons contre la pollution numérique",
+    	"description": "Description of the extension."
+  	},
+
+  	"button_pro": {
+    	"message": "Passer en Mode : PRO"},
+
+  	"button_normal": {
+    	"message": "Passer en Mode : PERSONNEL"},
+  
+  	"size_Bytes" : {
+		"message" : "Octets"},
+
+	"size_KB" : {
+		"message" : "KO"},	
+
+  	"size_MB" : {
+		"message" : "MO"},
+
+	"size_GB" : {
+		"message" : "GO"},
+
+	"size_TB" : {
+		"message" : "TO"},
+		
+	"ecoscore": {
+		"message": "VOTRE ECOSCORE : $1 POINTS"},
+
+	"total_consumption" : {
+		"message": "Votre consommation totale est de : $1"},
+
+	"week_consumption" : {
+		"message": "Votre consommation de la semaine $1 sur $2 sites"},
+
+	"button_settings": {
+		"message": "Paramètres"},
+
+	"weekly_report": {
+		"message": "Rapport Hebdo"},
+
+	"weekly_title1": {
+		"message": "Votre évolution par rapport aux semaines précédentes"},
+
+	"weekly_title2": {
+		"message": "Répartition de vos activités sur Internet"},
+
+	"weekly_title3": {
+		"message": "Vos chiffres"},
+
+	"conseil": {
+		"message": "Nos conseils"},
+
+	"lesconseils_t01": {
+		"message": "Si votre consommation de données due au streaming cette semaine est très haute. \nVous pouvez : "},
+
+	"lesconseils_t02": {
+		"message": "Réduire la qualité de visionnage de vos vidéos"},
+
+	"lesconseils_t03": {
+		"message": "Télécharger vos films avant de les regarder (disponible sur Netflix, Prime Video, Youtube Premium...)"},
+
+	"lesconseils_t04": {
+		"message": "Vous pouvez réduire votre consommation de données due aux mails : "},
+
+	"lesconseils_t05": {
+		"message": "Envoyez vos mails en HTML <a class = link href=\"https://www.maison-facile.com/magazine/multimedia/outlook/2611-ecrire-un-mail-au-format-texte-ou-html/\">cliquez ici pour un tuto</a>"},
+	
+	"lesconseils_t06": {
+		"message": "Utilisez <a class = link href=\"https://www.cleanfox.io/fr/\"> Cleanfox pour trier vos mails</a>"},
+
+	"lesconseils_t07": {
+		"message": "Compressez vos dossiers en pièces jointes"},
+
+	"lesconseils_t08": {
+		"message": "Si vous avez recherché une page plusieurs fois cette semaine. Mettez la en favori et vous ne chargerez pas des données à chaque recherche."},
+
+	"Toulouse_CDG_t01": {
+		"message": "Vous avez engendré : "},
+
+	"Toulouse_CDG_t02": {
+		"message": "Quelques équivalences : "}, 
+
+	"Streaming": {
+		"message": "Streaming"},
+
+	"Email": {
+		"message": "Mails"},
+
+	"Research": {
+		"message": "Recherches"},
+
+	"Social_Networks": {
+		"message": "Réseaux Sociaux"},
+
+	"Others": {
+		"message": "Autres"},
+
+	"Cloud": {
+		"message": "Cloud"},
+
+	"Ecommerce": {
+		"message": "E-commerce"},
+	
+	"calcul1": {
+		"message": "$1 Mo soit $2 g de CO2"},
+
+	"calcul2": {
+		"message": "$1 Km"},
+
+	"calcul3": {
+		"message": "$1 h et $2 min"},
+	
+	"consumption": {
+		"message": "Consommation"
+	}
+}
