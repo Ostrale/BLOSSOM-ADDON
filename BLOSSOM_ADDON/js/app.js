@@ -18,17 +18,16 @@ function test() {
 }
 
 function ProFun() {
-    modenormal = localStorage.getItem('profunStorage')
-    if (modenormal == "false")
-        {
-            localStorage.setItem('profunStorage', 'true')
+    chrome.storage.local.get(['profunStorage'], function (modenormal) {
+        modenormal = modenormal.profunStorage
+        if (modenormal == "false"){
+            chrome.storage.local.set({'profunStorage': 'true'});
             boutonprofun.value = trad("button_pro")
-        }
-    else 
-        {
-            localStorage.setItem('profunStorage', 'false')
+        }else {
+            chrome.storage.local.set({'profunStorage': 'false'});
             boutonprofun.value = trad("button_normal")
         }
+    });
 }
 
 function openoption() {
@@ -78,49 +77,52 @@ function getWeek(bf=0) {
 };
 
 //var pourcentage = getRandomInt(101)
-var pourcentage = localStorage.getItem('Score')
-if (pourcentage < 10){
-    var Pourcentage_entier = 0
-}else if (pourcentage == 100){
-    var Pourcentage_entier = 9
-}else{
-    var Pourcentage_texte = pourcentage.toString();
-    var Pourcentage_texte = Pourcentage_texte.slice(0, 1)
-    var Pourcentage_entier = parseInt(Pourcentage_texte)
-}
-let var1 = "<img src='image/arbre_"
-let var2 = ".png 'alt='Photo dun arbre en mauvaise santé'/>"
-let var3 = var1 + Pourcentage_entier + var2;
-
-let imageinp = document.getElementById("image");
-imageinp.innerHTML = var3
-
-let phrase = trad("ecoscore",pourcentage)
-Ecrire('ecolo',phrase)
-
-modenormal = localStorage.getItem('profunStorage')
-if (modenormal == "false")
-    {
-        var textbtn = trad("button_normal")
+chrome.storage.local.get(['Score'], function (pourcentage) {
+    pourcentage = pourcentage.Score
+    if (pourcentage < 10){
+        var Pourcentage_entier = 0
+    }else if (pourcentage == 100){
+        var Pourcentage_entier = 9
+    }else{
+        var Pourcentage_texte = pourcentage.toString();
+        var Pourcentage_texte = Pourcentage_texte.slice(0, 1)
+        var Pourcentage_entier = parseInt(Pourcentage_texte)
     }
-else 
-    {
-        var textbtn = trad("button_pro")
-    }
+    let var1 = "<img src='image/arbre_"
+    let var2 = ".png 'alt='Photo dun arbre'/>"
+    let var3 = var1 + Pourcentage_entier + var2;
+    
+    let imageinp = document.getElementById("image");
+    imageinp.innerHTML = var3
+    
+    console.log(typeof pourcentage)
+    let phrase = trad("ecoscore",pourcentage.toString())
+    Ecrire('ecolo',phrase)
+});
 
 var boutonprofun = document.createElement("input");
 boutonprofun.type = "button";
-boutonprofun.value = textbtn; 
+boutonprofun.value = "textbtn"; 
 boutonprofun.id='profun';
 boutonprofun.classList.add("styled");
 var append =document.getElementById("profun");
 append.appendChild(boutonprofun);
 boutonprofun.addEventListener("click", () => {ProFun()} );
+chrome.storage.local.get(['profunStorage'], function (modenormal) {
+    modenormal = modenormal.profunStorage
+    if (modenormal == "false"){
+        var textbtn = trad("button_normal")
+    }else{
+        var textbtn = trad("button_pro")
+    }
+    boutonprofun.value = textbtn;
+});
 
-
-totoc = localStorage.getItem('consomationtotal');
-totol = bytesToSize(totoc)
-Ecrire('toto', trad("total_consumption",totol))
+chrome.storage.local.get(['consomationtotal'], function (totoc) {
+    totoc = totoc.consomationtotal
+    totol = bytesToSize(totoc)
+    Ecrire('toto', trad("total_consumption",totol))
+});
 
 let parametre = document.getElementById("para");
 parametre.addEventListener("click", () => {openoption()} );
