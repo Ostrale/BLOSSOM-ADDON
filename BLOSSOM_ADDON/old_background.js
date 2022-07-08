@@ -150,7 +150,7 @@ var callback = function(details) {
                         if (indices.length > 1) {
                             let avantdernierpoint = indices[indices.length-2];
                             let caschiant = ['mail','outlook','web-mail','messageriepro3','drive','cloud','photos','live','music','webmail'];
-                            let indexvoila = (caschiant).indexOf(hosturl.substring(0,avantdernierpoint))
+                            let indexvoila = (caschiant).indexOf(hosturl.substring(0,avantdernierpoint));
                             if (indexvoila == -1){
                                 var nomsite = hosturl.substring(avantdernierpoint+1, dernierpoint);
                             } else {

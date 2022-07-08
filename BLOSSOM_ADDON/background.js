@@ -121,6 +121,7 @@ function autoData(dico_data){ // J'espère que ca fonctionne sinon faut reprendr
     
     */
     Promise.all([getData(dico_data.semaine)]).then((result) => {
+        result = result[0]
         if (result != undefined){
             updateData(dico_data);
         }else{
@@ -134,7 +135,7 @@ function displayData(dico_data){
     /*  Ouvre l'object store puis récupère un curseur - qui va nous permettre d'itérer sur les entrées de l'object store, On affiche alors le contenu des itérations
     
     */
-    console.log(' ################## ############################### ################## ');
+    console.log(' ################## ################## ');
     let objectStore = db.transaction('suivi_conso').objectStore('suivi_conso');
     objectStore.openCursor().onsuccess = function(e) {
         let cursor = e.target.result; // Récupère une référence au curseur
@@ -147,10 +148,9 @@ function displayData(dico_data){
             
             cursor.continue(); // Continue l'itération vers la prochaine entrée du curseur
         } else {
-            console.log(' ################## Pas d autre données dans la BDD ################## ');
+            console.log(' ######## Pas d autre données dans la BDD ######## ');
         }
     };
-
 }
 
 function deleteItembyid(id) {
@@ -201,12 +201,73 @@ function deleteAllDATA(){
     remove_localStorage_consomationtotal()
 }
 
+async function state_profunStorage(){
+    /* 
+    
+    */
+    return new Promise((resolve, reject) => {
+        chrome.storage.local.get(['profunStorage'], function (result) { 
+            let etat_du_bouton = result.profunStorage
+            resolve(etat_du_bouton);
+        })
+    })
+}
+
+function take_name_site(hosturl){
+    var nomsite;
+
+    let indices = []; //Contient tous les indices des points : '.'
+    for(let i=0; i<hosturl.length;i++) {
+        if (hosturl[i] == ".") indices.push(i);
+    }
+
+    let dernierpoint = indices[indices.length-1];
+    if (indices.length > 1) {
+        let avantdernierpoint = indices[indices.length-2];
+        let caschiant = ['mail','outlook','web-mail','messageriepro3','drive','cloud','photos','live','music','webmail'];
+        let indexvoila = (caschiant).indexOf(hosturl.substring(0,avantdernierpoint));
+        if (indexvoila == -1){
+            nomsite = hosturl.substring(avantdernierpoint+1, dernierpoint);
+        } else {
+            nomsite = hosturl.substring(0,dernierpoint);
+        }
+    } else {
+        nomsite = hosturl.substring(dernierpoint, 0);
+    }
+    return nomsite;
+}
+
 var callback_of_webRequest = function(details){
     /* 
     
     */
-    let entete = details.responseHeaders
-    let url = details.initiator
+    Promise.all([state_profunStorage()]).then((result) => {// si on est en mode pro on stop l'execution
+        if (result == false){ return; };
+    })
+
+    //On va maintenant récupérer les sites pour ca on lit les url
+    let entete = details.responseHeaders;
+    let url_txt = details.initiator; // string de l'url
+    let url; // Le mettre ici c'est important et pas dans le try dirrectement
+    try{
+        url = new URL(url_txt); //On créer un objet type URL
+    }catch(error){
+        return; //si ca n'a pas d'url c'est que c'est pas ce qu'on veut alors on coupe
+    }
+    let host_url = url.host; // C'est la partie de l'url qui nous interesse 
+    
+    // Ici on va chercher dans les headers (entête) le poids en octet des éléments, si il en ont pas ont les ignores
+    let content_length = entete.find(e => e.name === 'content-length');
+    if (content_length == undefined){ return; }; // Si ca n'as pas de masse en octet alors ca nous interesse pas
+    
+    // On peut maintenant ajouter dans notre local storage la conso
+    localStorage_consomationtotal(content_length.value);
+
+    //Maintenant on ajoute cette même conso à la bdd et on ajoute les sites et leur conso
+    let nom_du_site = take_name_site(host_url); //On récupère le nom du site
+    let object_site = {};
+    object_site[nom_du_site] = parseInt(content_length.value);
+    autoData({semaine : getWeek(), consomation : parseInt(content_length.value), site : object_site });
 }
 
 var filter = { urls: ['<all_urls>']};
@@ -214,3 +275,35 @@ var opt_extraInfoSpec = ['responseHeaders'];
 chrome.webRequest.onHeadersReceived.addListener(
     callback_of_webRequest, filter, opt_extraInfoSpec
 );
+// Ouvrir la BDD; elle sera créée si elle n'existe pas déjà
+let request = self.indexedDB.open('suivi_conso', 1);
+request.onerror = function() {
+    console.log('Database failed to open');
+};
+request.onsuccess = function() {
+    console.log('Database opened successfully');
+    // Stocke la base de données ouverte dans la variable db. On l'utilise par la suite
+    db = request.result;
+    displayData(); 
+    /* TODO 
+    Promise.all([getData(getWeek()).site,getData(getWeek(-1)).site]).then((sites) => {
+        fetch("/bdd_sites.json").then(mockResponses => {
+            return mockResponses.json();
+        }).then(bddsite =>start(sites,bddsite));
+    });
+    */
+}
+
+// Spécifie les tables de la BDD si ce n'est pas déjà pas fait
+request.onupgradeneeded = function(e) {
+    // Récupère une référence à la BDD ouverte
+    let db = e.target.result;
+    // Crée un objectStore pour stocker nos notes (une table)
+    // Avec un champ qui s'auto-incrémente comme clé
+    let objectStore = db.createObjectStore('suivi_conso', { keyPath: 'id', autoIncrement:true });
+    // Définit les champs que l'objectStore contient
+    objectStore.createIndex('semaine', 'semaine', { unique: true });
+    objectStore.createIndex('consomation', 'consomation', { unique: false });
+    objectStore.createIndex('site', 'site', { unique: false });
+    console.log('Database setup complete');
+};
