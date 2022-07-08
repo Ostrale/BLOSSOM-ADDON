@@ -198,6 +198,7 @@ request.onsuccess = function() {
     // Stocke la base de données ouverte dans la variable db. On l'utilise par la suite
     db = request.result;
     //displayData(); 
+    // ON CHANGE ICI GETSITE NE PRENDS PAS LA MEME ENTREE
     let thelistesite = Promise.all([GetSite(0),GetSite(-1)]).then((results) => {
         let sites = results
         fetch("/../bdd_sites.json")
@@ -324,6 +325,7 @@ function autoData(ladata) {
     }
 }
 
+// On ne remet pas cette fonction elle est remplacé par un meilleur updateData
 function updateSites(lasemaine, name, consodusite) {
     var transaction = db.transaction(['suivi_conso'], 'readwrite');
     var objectStore = transaction.objectStore('suivi_conso');
@@ -346,12 +348,12 @@ function updateSites(lasemaine, name, consodusite) {
 function deleteBDD() {
     var DBDeleteRequest = self.indexedDB.deleteDatabase("suivi_conso");
     DBDeleteRequest.onerror = function(event) {
-      console.log("Erreur lors de la suppression de la base");
+        console.log("Erreur lors de la suppression de la base");
     };
     
     DBDeleteRequest.onsuccess = function(event) {
-      console.log("BDD suivi_conso was kill by you !");
-      console.log(event.result); // undefined
+        console.log("BDD suivi_conso was kill by you !");
+        console.log(event.result); // undefined
     };
 }
 
