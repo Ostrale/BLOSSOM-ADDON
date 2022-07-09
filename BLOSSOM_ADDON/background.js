@@ -3,78 +3,72 @@ import DateTime from '/js/luxon/src/datetime.js'
 // Objet db pour stocker la BDD ouverte
 let db;
 
-function getWeek(decalage_semaine=0){
-    /* Used to return in the form of W00Y0000 the week and the year requested in relation to today
-    Use moment/luxon : https://github.com/moment/luxon
+function getWeek(week_shift = 0){
+    /* Takes into account today's date and calculates the date with a specific week shift. Returns a string in W00Y0000 format.
     
-    param number decalage_semaine: offset in number of weeks from the current week
-
-    return string : In this format W00Y0000 
+    Use of the DateTime library available on : https://github.com/moment/luxon
+    param number week_shift : offset in number of weeks from the current week
     */
-    let date = DateTime.now().plus({ weeks: decalage_semaine });
+    let date = DateTime.now().plus({ weeks: week_shift });
     let week = date.weekNumber;
     let year = date.year;
     return 'W'+week+'Y'+year;
 }
 
-function localStorage_consomationtotal(conso_a_ajouter) {
-    /* Create the local Storage and calculate the total of the user consummption 
-    
-    param number conso: number of date in kb
+function localStorage_overallconsumption(consumption_to_add) {
+    /* Creates the user's database local Storage and stores his overall consumption of data in kb
+    param number consumption : data used by the web user in kb
     */
-    navigateur.storage.local.get(['consomationtotal'], function (stockage_de_donnees){
-        let maconso = stockage_de_donnees.consomationtotal;
-        if (maconso == undefined){
-            console.log('Creation de consomationtotal en localStorage');
-            maconso = parseInt(conso_a_ajouter);
+    navigateur.storage.local.get(['overallconsumption'], function (data_storage){
+        let myconsumption = data_storage.overallconsumption;
+        if (myconsumption == undefined){
+            console.log('Overallconsumption creation in localStorage');
+            myconsumption = parseInt(consumption_to_add);
         }else{
-            maconso =  parseInt(maconso)+parseInt(conso_a_ajouter);
+            myconsumption =  parseInt(myconsumption)+parseInt(consumption_to_add);
         }
-        navigateur.storage.local.set({'consomationtotal': maconso});
+        navigateur.storage.local.set({'overallconsumption': myconsumption});
 
     })
 }
 
-function remove_localStorage_consomationtotal(){
-    /* Remove the localStorage 'consomationtotal'
-    */
-    navigateur.storage.local.remove(['consomationtotal']);
+function remove_localStorage_overallconsumption(){
+    // Deletes the overall consumption from the local Storage database
+    
+    navigateur.storage.local.remove(['overallconsumption']);
 }
 
-function merge(object_list){
-    /* Merge all object of a list, if 2 object have the same name, the function add the 2 values of the 2 object
+function merge(objects_list){
+    /* Merge all object of a list, if 2 object have the same name, the function add the 2 values of the 2 objects
     
-    param list object_list: list with all object who will be merged 
-
-    return object: one object merge
+    param list objects_list : list with all the objects which will be merged
+    return object : one merged objects
     */
-    let object_merged = object_list.reduce((object_merged, one_object) => {
-        for (const [site_name, site_consumption] of Object.entries(one_object)) {
-            if (!object_merged[site_name]) {
-                object_merged[site_name] = 0;
+    let merged_object = objects_list.reduce((merged_object, one_object) => {
+        for (const [website_name, website_consumption] of Object.entries(one_object)) {
+            if (!merged_object[website_name]) {
+                merged_object[website_name] = 0;
             }
-            object_merged[site_name] += site_consumption;
+            merged_object[website_name] += website_consumption;
         }
-        return object_merged;
+        return merged_object;
     }, {});
-    return object_merged;
+    return merged_object;
 }
 
 async function getData(week_of_getWeek){
-    /* Take data (sites and conso) stocked
-
-    param string: Week in this format W00Y0000 (obtained by getWeek)
+    /* Uses data (websites and consumption) stored in the local storage and creates a dictionnary with website and all the consumption on this website
     
-    resolve : renvoi le resultat sous forme d'un dico avec site (dico) et consomation (number)
+    param string : Week in W00Y0000 format obtained by the getWeek function
+    resolve : return the result in the form of a dictionnary with the website for the key and the consumption for the value.
     */
     return new Promise((resolve, reject) => {
-        let transaction = db.transaction(['suivi_conso'], 'readwrite'); // ouvrir une transaction (un échange de données) en lecture/écriture
-        let objectStore = transaction.objectStore('suivi_conso'); // récupérer l'object store de la base de données qui a été ouvert avec la transaction, l'object store est un accès aux magasins d'objet de la base de données. Le magasin d'objet emmagasine des enregistrements. Chaque enregistrement est constitué d'un couple clé/valeur. Chaque valeurs est indexée sur sa clé. Les clés sont triées pour former l'index primaire du magasin. Ce qui permet un accès rapide et ordonnée aux valeurs.
-        let myIndex = objectStore.index('semaine'); // Dans notre magasin 'suivi_conso' On récupère l'objet 'semaine' c'est à partir de lui qu'on va pouvoir lire notre bdd, il nous sert d'index
-        let getRequest = myIndex.get(week_of_getWeek); // On va chercher la semaine qui nous interesse grace à getWeek
+        let transaction = db.transaction(['consumption_tracking'], 'readwrite'); // Opens a transaction (data exchange) in read/write
+        let objectStore = transaction.objectStore('consumption_tracking'); // Retrieves the store object from the database opened by the transaction. The store object is an access to objects storages in the database. The objects storage stores recordings & each recording is composed of a key/value pair. Each value is indexed to its key. Keys are sorted to form the storage's primary index which allows a quick & organised access to values.
+        let myIndex = objectStore.index('week'); // Retrieves the 'week' object in the 'consumption_tracking' storage. Thanks to this object, we'll be able to read our database, 'week' is used as an index.
         getRequest.onsuccess = async function() {
             //console.log(getRequest.result) // let sites = getRequest.result.site;
-            resolve(getRequest.result) // la promesse est renvoyée (remplace le return)
+            resolve(getRequest.result) // Promise is returned
         }
         transaction.onerror = function(){
             console.log('Transaction not opened due to error');
@@ -82,33 +76,33 @@ async function getData(week_of_getWeek){
    })
 }
 
-function addData(dico_data){ //semaine: getWeek(+-n), consomation : parseInt(N), site : {dico site1 : conso1, site2 : conso2}})
+function addData(data_dictionnary){
     /* 
-    
+    Adds new objects to the store object in the following format : week: getWeek(+-n), consomation : parseInt(N), site : {dico site1 : conso1, site2 : conso2}})
     */
-    let transaction = db.transaction(['suivi_conso'], 'readwrite'); // ouvrir une transaction (un échange de données) en lecture/écriture
-    let objectStore = transaction.objectStore('suivi_conso'); // récupérer l'object store de la base de données qui a été ouvert avec la transaction, l'object store est un accès aux magasins d'objet de la base de données. Le magasin d'objet emmagasine des enregistrements. Chaque enregistrement est constitué d'un couple clé/valeur. Chaque valeurs est indexée sur sa clé. Les clés sont triées pour former l'index primaire du magasin. Ce qui permet un accès rapide et ordonnée aux valeurs.
-    objectStore.add(dico_data); // demander l'ajout de notre nouvel objet à l'object store
+    let transaction = db.transaction(['consumption_tracking'], 'readwrite'); // Opens a transaction (data exchange) in read/write
+    let objectStore = transaction.objectStore('consumption_tracking'); // Retrieves the store object from the database opened by the transaction. The store object is an access to objects storages in the database. The objects storage stores recordings & each recording is composed of a key/value pair. Each value is indexed to its key. Keys are sorted to form the storage's primary index which allows a quick & organised access to values.
+    objectStore.add(data_dictionnary); // Requests to add the new object to the store object
     transaction.oncomplete = function() {
-        console.log('Transaction completed: database modification finished.');
+        console.log('Transaction completed : database modification finished.');
     }
     transaction.onerror = function(){
         console.log('Transaction not opened due to error');
     }
 }
 
-function updateData(dico_data){//semaine: getWeek(+-n), consomation : parseInt(N), site : {dico site1 : conso1, site2 : conso2}})
+function updateData(data_dictionnary){//week: getWeek(+-n), consomation : parseInt(N), site : {dico site1 : conso1, site2 : conso2}})
     /* 
-    
+    Adds new objects to the store object in the following format : week: getWeek(+-n), consomation : parseInt(N), site : {dico site1 : conso1, site2 : conso2}})
     */
-    let transaction = db.transaction(['suivi_conso'], 'readwrite'); // ouvrir une transaction (un échange de données) en lecture/écriture
-    let objectStore = transaction.objectStore('suivi_conso'); // récupérer l'object store de la base de données qui a été ouvert avec la transaction, l'object store est un accès aux magasins d'objet de la base de données. Le magasin d'objet emmagasine des enregistrements. Chaque enregistrement est constitué d'un couple clé/valeur. Chaque valeurs est indexée sur sa clé. Les clés sont triées pour former l'index primaire du magasin. Ce qui permet un accès rapide et ordonnée aux valeurs.
-    let myIndex = objectStore.index('semaine'); // Dans notre magasin 'suivi_conso' On récupère l'objet 'semaine' c'est à partir de lui qu'on va pouvoir lire notre bdd, il nous sert d'index
-    let getRequest = myIndex.get(dico_data.semaine); // On va chercher la semaine qui nous interesse grace à getWeek
+    let transaction = db.transaction(['consumption_tracking'], 'readwrite'); // Opens a transaction (data exchange) in read/write
+    let objectStore = transaction.objectStore('consumption_tracking'); // Retrieves the store object from the database opened by the transaction. The store object is an access to objects storages in the database. The objects storage stores recordings & each recording is composed of a key/value pair. Each value is indexed to its key. Keys are sorted to form the storage's primary index which allows a quick & organised access to values.
+    let myIndex = objectStore.index('week'); // Retrieves the 'week' object in the 'consumption_tracking' storage. Thanks to this object, we'll be able to read our database, 'week' is used as an index.
+    let getRequest = myIndex.get(data_dictionnary.week); // Gets the interested week by getWeek function
         getRequest.onsuccess = async function() {
             let data_in_bdd = getRequest.result;
-            data_in_bdd.consomation = data_in_bdd.consomation + dico_data.consomation;
-            data_in_bdd.site = merge([data_in_bdd.site, dico_data.site]); // fusionne les deux dico, si une entité existe déja son nombre est additionné (GG mec)
+            data_in_bdd.consomation = data_in_bdd.consomation + data_dictionnary.consomation;
+            data_in_bdd.site = merge([data_in_bdd.site, data_dictionnary.site]); // fusionne les deux dico, si une entité existe déja son nombre est additionné (GG mec)
             objectStore.put(data_in_bdd);
         }
     transaction.onerror = function(){
@@ -116,32 +110,32 @@ function updateData(dico_data){//semaine: getWeek(+-n), consomation : parseInt(N
     }
 }
 
-function autoData(dico_data){ // J'espère que ca fonctionne sinon faut reprendre l'ancien ou améliorer celui ci...
+function autoData(data_dictionnary){ // J'espère que ca fonctionne sinon faut reprendre l'ancien ou améliorer celui ci...
     /*
     
     */
-    Promise.all([getData(dico_data.semaine)]).then((result) => {
+    Promise.all([getData(data_dictionnary.week)]).then((result) => {
         result = result[0]
         if (result != undefined){
-            updateData(dico_data);
+            updateData(data_dictionnary);
         }else{
-            addData(dico_data);
+            addData(data_dictionnary);
         }
     })
 
 }
 
-function displayData(dico_data){
+function displayData(data_dictionnary){
     /*  Ouvre l'object store puis récupère un curseur - qui va nous permettre d'itérer sur les entrées de l'object store, On affiche alors le contenu des itérations
     
     */
     console.log(' ################## ################## ');
-    let objectStore = db.transaction('suivi_conso').objectStore('suivi_conso');
+    let objectStore = db.transaction('consumption_tracking').objectStore('consumption_tracking');
     objectStore.openCursor().onsuccess = function(e) {
         let cursor = e.target.result; // Récupère une référence au curseur
         if(cursor) { // S'il reste des entrées sur lesquelles itérer, on exécute ce code
             console.log('@---@');
-            console.log(cursor.value.semaine);
+            console.log(cursor.value.week);
             console.log(cursor.value.consomation);
             console.log(cursor.value.site);
             console.log('@-^-@');
@@ -157,10 +151,10 @@ function deleteItembyid(id) {
     /* 
     
     */
-    let request = db.transaction(["suivi_conso"], "readwrite").objectStore("suivi_conso").delete(id);
+    let request = db.transaction(["consumption_tracking"], "readwrite").objectStore("consumption_tracking").delete(id);
     request.onsuccess = function(event) {
         console.log("Entrée surpprimée avec succès !");
-        console.log('Suivi_conso ' + id + ' deleted.');
+        console.log('consumption_tracking ' + id + ' deleted.');
     };
 }
 
@@ -168,10 +162,10 @@ function deleteItembyweek(week_of_getWeek) {
     /* 
     
     */
-    let transaction = db.transaction(['suivi_conso'], 'readwrite');
-    let objectStore = transaction.objectStore('suivi_conso');
+    let transaction = db.transaction(['consumption_tracking'], 'readwrite');
+    let objectStore = transaction.objectStore('consumption_tracking');
   
-    let myIndex = objectStore.index('semaine');
+    let myIndex = objectStore.index('week');
     let getRequest = myIndex.get(week_of_getWeek);
     getRequest.onsuccess = function() {
         let ID = getRequest.result.id
@@ -183,12 +177,12 @@ function deleteBDD() {
     /* 
     
     */
-    let DBDeleteRequest = self.indexedDB.deleteDatabase("suivi_conso");
+    let DBDeleteRequest = self.indexedDB.deleteDatabase("consumption_tracking");
     DBDeleteRequest.onerror = function(event) {
         console.log("Erreur lors de la suppression de la base");
     };  
     DBDeleteRequest.onsuccess = function(event) {
-        console.log("BDD suivi_conso was kill by you !");
+        console.log("BDD consumption_tracking was kill by you !");
         console.log(event.result); // undefined
     };
 }
@@ -198,7 +192,7 @@ function deleteAllDATA(){
     
     */
     deleteBDD()
-    remove_localStorage_consomationtotal()
+    remove_localStorage_overallconsumption()
 }
 
 async function state_profunStorage(){
@@ -261,13 +255,13 @@ var callback_of_webRequest = function(details){
     if (content_length == undefined){ return; }; // Si ca n'as pas de masse en octet alors ca nous interesse pas
     
     // On peut maintenant ajouter dans notre local storage la conso
-    localStorage_consomationtotal(content_length.value);
+    localStorage_overallconsumption(content_length.value);
 
     //Maintenant on ajoute cette même conso à la bdd et on ajoute les sites et leur conso
     let nom_du_site = take_name_site(host_url); //On récupère le nom du site
     let object_site = {};
     object_site[nom_du_site] = parseInt(content_length.value);
-    autoData({semaine : getWeek(), consomation : parseInt(content_length.value), site : object_site });
+    autoData({week : getWeek(), consomation : parseInt(content_length.value), site : object_site });
 }
 
 function calculate_score(data, bdd){
@@ -315,17 +309,17 @@ function calculate_score(data, bdd){
     }
 
     let day = new Date().getDay();
-    let coefficient_multiplicateur_semaine_precedente = 1-(day/7);
-    let consomation_semaine_actuelle = consomation_par_categorie[0];
-    let consomation_semaine_precedente = consomation_par_categorie[1];
+    let coefficient_multiplicateur_week_precedente = 1-(day/7);
+    let consomation_week_actuelle = consomation_par_categorie[0];
+    let consomation_week_precedente = consomation_par_categorie[1];
     
     for (let categorie in vertuosite){
-        let conso_equivalent_une_semaine_1_categorie = consomation_semaine_actuelle[categorie] + consomation_semaine_precedente[categorie]*coefficient_multiplicateur_semaine_precedente;
-        if (conso_equivalent_une_semaine_1_categorie < vertuosite[categorie]){
+        let conso_equivalent_une_week_1_categorie = consomation_week_actuelle[categorie] + consomation_week_precedente[categorie]*coefficient_multiplicateur_week_precedente;
+        if (conso_equivalent_une_week_1_categorie < vertuosite[categorie]){
             score += 20;
         }else{
             let exces10 = (vertuosite[categorie]/10);
-            let excesabs = conso_equivalent_une_semaine_1_categorie-(vertuosite[categorie]);
+            let excesabs = conso_equivalent_une_week_1_categorie-(vertuosite[categorie]);
             let pertedepoint = excesabs / exces10;
             if (pertedepoint>20){
                 //pertedepoint = 20;
@@ -360,7 +354,7 @@ navigateur.webRequest.onHeadersReceived.addListener(
     callback_of_webRequest, filter, opt_extraInfoSpec
 );
 // Ouvrir la BDD; elle sera créée si elle n'existe pas déjà
-let request = self.indexedDB.open('suivi_conso', 1);
+let request = self.indexedDB.open('consumption_tracking', 1);
 request.onerror = function() {
     console.log('Database failed to open');
 };
@@ -382,9 +376,9 @@ request.onupgradeneeded = function(e) {
     let db = e.target.result;
     // Crée un objectStore pour stocker nos notes (une table)
     // Avec un champ qui s'auto-incrémente comme clé
-    let objectStore = db.createObjectStore('suivi_conso', { keyPath: 'id', autoIncrement:true });
+    let objectStore = db.createObjectStore('consumption_tracking', { keyPath: 'id', autoIncrement:true });
     // Définit les champs que l'objectStore contient
-    objectStore.createIndex('semaine', 'semaine', { unique: true });
+    objectStore.createIndex('week', 'week', { unique: true });
     objectStore.createIndex('consomation', 'consomation', { unique: false });
     objectStore.createIndex('site', 'site', { unique: false });
     console.log('Database setup complete');
