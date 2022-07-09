@@ -22,7 +22,7 @@ function localStorage_consomationtotal(conso_a_ajouter) {
     
     param number conso: number of date in kb
     */
-    chrome.storage.local.get(['consomationtotal'], function (stockage_de_donnees){
+    navigateur.storage.local.get(['consomationtotal'], function (stockage_de_donnees){
         let maconso = stockage_de_donnees.consomationtotal;
         if (maconso == undefined){
             console.log('Creation de consomationtotal en localStorage');
@@ -30,7 +30,7 @@ function localStorage_consomationtotal(conso_a_ajouter) {
         }else{
             maconso =  parseInt(maconso)+parseInt(conso_a_ajouter);
         }
-        chrome.storage.local.set({'consomationtotal': maconso});
+        navigateur.storage.local.set({'consomationtotal': maconso});
 
     })
 }
@@ -38,7 +38,7 @@ function localStorage_consomationtotal(conso_a_ajouter) {
 function remove_localStorage_consomationtotal(){
     /* Remove the localStorage 'consomationtotal'
     */
-    chrome.storage.local.remove(['consomationtotal']);
+    navigateur.storage.local.remove(['consomationtotal']);
 }
 
 function merge(object_list){
@@ -206,7 +206,7 @@ async function state_profunStorage(){
     
     */
     return new Promise((resolve, reject) => {
-        chrome.storage.local.get(['profunStorage'], function (result) { 
+        navigateur.storage.local.get(['profunStorage'], function (result) { 
             let etat_du_bouton = result.profunStorage
             resolve(etat_du_bouton);
         })
@@ -270,9 +270,93 @@ var callback_of_webRequest = function(details){
     autoData({semaine : getWeek(), consomation : parseInt(content_length.value), site : object_site });
 }
 
+function calculate_score(data, bdd){
+    /* 
+    
+    */
+    let vertuosite = {
+        Mails:2835e3,
+        Streaming:9.31e9,
+        Recherches:8.1e6,
+        Reseaux_Sociaux:0.49e9,
+        Autres:1.02e9+100e6 //autre contient autre ecommerce et cloud
+    }
+
+    let score = 0;
+    let web_site = [];
+    let consomation_par_categorie = []
+    let empty_categorie = {Streaming:0,Mails:0,Recherches:0,Reseaux_Sociaux:0,Autres:0,Cloud :0,E_commerce:0}
+    
+    for (let el of data){
+        if(el != undefined){
+            web_site.push(el.site);
+        }else{
+            web_site.push({});
+        }
+        consomation_par_categorie.push(JSON.parse(JSON.stringify(empty_categorie))); //JSON.parse(JSON.stringify(monObjet)) permet le clonage d'un objet
+    }
+    for (let i=0; i<web_site.length ; i++){
+        for (let site in web_site[i]){
+            let count = 0;
+            for (let categorie in bdd){
+                if (bdd[categorie].indexOf(site) != -1){
+                    consomation_par_categorie[i][categorie] += Math.round(web_site[i][site]);
+                }else{
+                    count++
+                }
+                if (i==6){
+                    consomation_par_categorie[i]['Autres'] += Math.round(web_site[i][site]);
+                }
+                
+            }
+        }
+        consomation_par_categorie[i]['Autres'] +=  consomation_par_categorie[i]['E_commerce'] +  consomation_par_categorie[i]['Cloud'];
+        consomation_par_categorie[i]['E_commerce'] = consomation_par_categorie[i]['Cloud'] = 0;        
+    }
+
+    let day = new Date().getDay();
+    let coefficient_multiplicateur_semaine_precedente = 1-(day/7);
+    let consomation_semaine_actuelle = consomation_par_categorie[0];
+    let consomation_semaine_precedente = consomation_par_categorie[1];
+    
+    for (let categorie in vertuosite){
+        let conso_equivalent_une_semaine_1_categorie = consomation_semaine_actuelle[categorie] + consomation_semaine_precedente[categorie]*coefficient_multiplicateur_semaine_precedente;
+        if (conso_equivalent_une_semaine_1_categorie < vertuosite[categorie]){
+            score += 20;
+        }else{
+            let exces10 = (vertuosite[categorie]/10);
+            let excesabs = conso_equivalent_une_semaine_1_categorie-(vertuosite[categorie]);
+            let pertedepoint = excesabs / exces10;
+            if (pertedepoint>20){
+                //pertedepoint = 20;
+            }
+            score += 20-pertedepoint;
+        }
+    }
+    score = Math.round(score);
+    navigateur.storage.local.set({'Score': score});
+}
+
+// Opera 8.0+
+var isOpera = (!!self.opr && !!opr.addons) || !!self.opera || navigator.userAgent.indexOf(' OPR/') >= 0;
+// Firefox 1.0+
+var isFirefox = typeof InstallTrigger !== 'undefined';
+// Safari 3.0+ "[object HTMLElementConstructor]" 
+var isSafari = /constructor/i.test(self.HTMLElement) || (function (p) { return p.toString() === "[object SafariRemoteNotification]"; })(!self['safari'] || (typeof safari !== 'undefined' && self['safari'].pushNotification));
+// Chrome 1 - 79
+var isChrome = !!self.chrome && (!!self.chrome.webstore || !!self.chrome.runtime);
+// Edge (based on chromium) detection
+var isEdgeChromium = isChrome && (navigator.userAgent.indexOf("Edg") != -1);
+// Blink engine detection
+var isBlink = (isChrome || isOpera) && !!self.CSS;
+
+var navigateur;
+if (isChrome || isEdgeChromium){navigateur = chrome;}
+else if (isFirefox){navigateur = browser;}
+
 var filter = { urls: ['<all_urls>']};
 var opt_extraInfoSpec = ['responseHeaders'];
-chrome.webRequest.onHeadersReceived.addListener(
+navigateur.webRequest.onHeadersReceived.addListener(
     callback_of_webRequest, filter, opt_extraInfoSpec
 );
 // Ouvrir la BDD; elle sera créée si elle n'existe pas déjà
@@ -285,13 +369,11 @@ request.onsuccess = function() {
     // Stocke la base de données ouverte dans la variable db. On l'utilise par la suite
     db = request.result;
     displayData(); 
-    /* TODO 
-    Promise.all([getData(getWeek()).site,getData(getWeek(-1)).site]).then((sites) => {
+    Promise.all([getData(getWeek()),getData(getWeek(-1))]).then((datas) => {
         fetch("/bdd_sites.json").then(mockResponses => {
             return mockResponses.json();
-        }).then(bddsite =>start(sites,bddsite));
+        }).then(bddsite =>calculate_score(datas,bddsite));
     });
-    */
 }
 
 // Spécifie les tables de la BDD si ce n'est pas déjà pas fait
