@@ -6,8 +6,8 @@ let db;
 function getWeek(week_shift = 0){
     /* Takes into account today's date and calculates the date with a specific week shift. Returns a string in W00Y0000 format.
     
-    Use of the DateTime library available on : https://github.com/moment/luxon
-    param number week_shift : offset in number of weeks from the current week
+    Use of the DateTime library available on: https://github.com/moment/luxon
+    param number week_shift : offset in number of weeks from the current week 
     */
     let date = DateTime.now().plus({ weeks: week_shift });
     let week = date.weekNumber;
