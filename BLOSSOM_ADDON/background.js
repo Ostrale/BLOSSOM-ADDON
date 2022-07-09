@@ -1,6 +1,6 @@
 import DateTime from '/js/luxon/src/datetime.js'
 
-// Objet db pour stocker la BDD ouverte
+// Objet db pour stocker la BDD ouverte 
 let db;
 
 function getWeek(week_shift = 0){
@@ -16,7 +16,7 @@ function getWeek(week_shift = 0){
 }
 
 function localStorage_overallconsumption(consumption_to_add) {
-    /* Creates the user's database local Storage and stores his overall consumption of data in kb
+    /* Creates the user's database local Storage and stores his overall consumption of data in bytes
     param number consumption : data used by the web user in kb
     */
     navigateur.storage.local.get(['overallconsumption'], function (data_storage){
@@ -57,10 +57,10 @@ function merge(objects_list){
 }
 
 async function getData(week_of_getWeek){
-    /* Uses data (websites and consumption) stored in the local storage and creates a dictionnary with website and all the consumption on this website
+    /* Uses data (websites and consumption) stored in the indexedDB (database) and creates a dictionnary with website and all the consumption on this website
     
     param string : Week in W00Y0000 format obtained by the getWeek function
-    resolve : return the result in the form of a dictionnary with the website for the key and the consumption for the value.
+    resolve : return the result in the form of a dictionnary with this form : {week format W00Y0000, consomation : parseInt(N), site : {web_site_1 : consumption1, web_site_2 : consumption2}}
     */
     return new Promise((resolve, reject) => {
         let transaction = db.transaction(['consumption_tracking'], 'readwrite'); // Opens a transaction (data exchange) in read/write
@@ -78,7 +78,7 @@ async function getData(week_of_getWeek){
 
 function addData(data_dictionnary){
     /* 
-    Adds new objects to the store object in the following format : week: getWeek(+-n), consomation : parseInt(N), site : {dico site1 : conso1, site2 : conso2}})
+    Adds new objects to the store object in the following format : {week: getWeek(+-n), consomation : parseInt(N), site : {dico site1 : conso1, site2 : conso2}}
     */
     let transaction = db.transaction(['consumption_tracking'], 'readwrite'); // Opens a transaction (data exchange) in read/write
     let objectStore = transaction.objectStore('consumption_tracking'); // Retrieves the store object from the database opened by the transaction. The store object is an access to objects storages in the database. The objects storage stores recordings & each recording is composed of a key/value pair. Each value is indexed to its key. Keys are sorted to form the storage's primary index which allows a quick & organised access to values.
@@ -93,7 +93,7 @@ function addData(data_dictionnary){
 
 function updateData(data_dictionnary){//week: getWeek(+-n), consomation : parseInt(N), site : {dico site1 : conso1, site2 : conso2}})
     /* 
-    Adds new objects to the store object in the following format : week: getWeek(+-n), consomation : parseInt(N), site : {dico site1 : conso1, site2 : conso2}})
+    Adds new objects to the store object in the following format : {week: getWeek(+-n), consomation : parseInt(N), site : {dico site1 : conso1, site2 : conso2}}
     */
     let transaction = db.transaction(['consumption_tracking'], 'readwrite'); // Opens a transaction (data exchange) in read/write
     let objectStore = transaction.objectStore('consumption_tracking'); // Retrieves the store object from the database opened by the transaction. The store object is an access to objects storages in the database. The objects storage stores recordings & each recording is composed of a key/value pair. Each value is indexed to its key. Keys are sorted to form the storage's primary index which allows a quick & organised access to values.
