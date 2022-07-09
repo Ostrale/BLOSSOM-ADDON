@@ -66,6 +66,7 @@ async function getData(week_of_getWeek){
         let transaction = db.transaction(['consumption_tracking'], 'readwrite'); // Opens a transaction (data exchange) in read/write
         let objectStore = transaction.objectStore('consumption_tracking'); // Retrieves the store object from the database opened by the transaction. The store object is an access to objects storages in the database. The objects storage stores recordings & each recording is composed of a key/value pair. Each value is indexed to its key. Keys are sorted to form the storage's primary index which allows a quick & organised access to values.
         let myIndex = objectStore.index('week'); // Retrieves the 'week' object in the 'consumption_tracking' storage. Thanks to this object, we'll be able to read our database, 'week' is used as an index.
+        let getRequest = myIndex.get(week_of_getWeek); // On va chercher la semaine qui nous interesse grace à getWeek
         getRequest.onsuccess = async function() {
             //console.log(getRequest.result) // let sites = getRequest.result.site;
             resolve(getRequest.result) // Promise is returned
