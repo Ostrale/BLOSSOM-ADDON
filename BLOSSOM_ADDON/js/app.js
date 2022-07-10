@@ -1,3 +1,4 @@
+import DateTime from '/js/luxon/src/datetime.js'
 let db;
 var trad = chrome.i18n.getMessage;
 
@@ -44,37 +45,17 @@ function bytesToSize(bytes) {
     var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
     return Math.round(bytes*100 / Math.pow(1024, i), 2)/100+sizes[i]
 }
-function getWeek(bf=0) {
-    let currentdate = new Date();
-    dowOffset = new Date(currentdate.getDay(), 0, 0);
-    dowOffset = typeof(dowOffset) == 'number' ? dowOffset : 0; 
-    var newYear = new Date(currentdate.getFullYear(),0,1);
-    var day = newYear.getDay() - dowOffset; 
-    day = (day >= 0 ? day : day + 7);
-    var daynum = Math.floor((currentdate.getTime() - newYear.getTime() - 
-    (currentdate.getTimezoneOffset()-newYear.getTimezoneOffset())*60000)/86400000) + 1;
-    var weeknum;
-    if(day < 4) {
-        weeknum = Math.floor((daynum+day-1)/7) + 1;
-        if(weeknum > 52) {
-            nYear = new Date(currentdate.getFullYear() + 1,0,1);
-            nday = nYear.getDay() - dowOffset;
-            nday = nday >= 0 ? nday : nday + 7;
-            weeknum = nday < 4 ? 1 : 53;
-        }
-    }
-    else {
-        weeknum = Math.floor((daynum+day-1)/7);
-    }
-    let wee = weeknum + bf;
-    let y = new Date().getFullYear()
-    if (wee <= 0) { 
-        wee = 52+wee;
-        y = y-1
-    };
-    var txt = 'W'+wee+'Y'+y
-    return txt
-};
+function getWeek(week_shift = 0){
+    /* Takes into account today's date and calculates the date with a specific week shift. Returns a string in W00Y0000 format.
+    
+    Use of the DateTime library available on: https://github.com/moment/luxon
+    param number week_shift : offset in number of weeks from the current week 
+    */
+    let date = DateTime.now().plus({ weeks: week_shift });
+    let week = date.weekNumber;
+    let year = date.year;
+    return 'W'+week+'Y'+year;
+}
 
 //var pourcentage = getRandomInt(101)
 chrome.storage.local.get(['Score'], function (pourcentage) {
@@ -118,9 +99,10 @@ chrome.storage.local.get(['profunStorage'], function (modenormal) {
     boutonprofun.value = textbtn;
 });
 
-chrome.storage.local.get(['consomationtotal'], function (totoc) {
-    totoc = totoc.consomationtotal
-    totol = bytesToSize(totoc)
+chrome.storage.local.get(['overallconsumption'], function (totoc) {
+    totoc = totoc.consomationtotal;
+    let totol = bytesToSize(totoc);
+    console.log(totol);
     Ecrire('toto', trad("total_consumption",totol))
 });
 
@@ -137,7 +119,7 @@ var wr = document.getElementById("week")
 wr.value = trad("weekly_report")
 
 // Ouvrir la BDD; elle sera créée si elle n'existe pas déjà
-let request = window.indexedDB.open('suivi_conso', 1);
+let request = window.indexedDB.open('consumption_tracking', 1);
 request.onerror = function() {
     console.log('Database failed to open');
 };
@@ -150,10 +132,10 @@ request.onsuccess = function() {
 
 
 function showData(e) {
-    var transaction = db.transaction(['suivi_conso'], 'readwrite');
-    var objectStore = transaction.objectStore('suivi_conso');
+    var transaction = db.transaction(['consumption_tracking'], 'readonly');
+    var objectStore = transaction.objectStore('consumption_tracking');
   
-    var myIndex = objectStore.index('semaine');
+    var myIndex = objectStore.index('week');
     var getRequest = myIndex.get(e);
     getRequest.onsuccess = function() {
         try {

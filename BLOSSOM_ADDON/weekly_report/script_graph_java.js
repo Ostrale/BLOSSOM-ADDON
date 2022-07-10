@@ -1,43 +1,24 @@
+import DateTime from '/js/luxon/src/datetime.js'
 let db;
 var trad = chrome.i18n.getMessage;
 
-function getWeek(bf=0) {
-    let currentdate = new Date();
-    dowOffset = new Date(currentdate.getDay(), 0, 0);
-    dowOffset = typeof(dowOffset) == 'number' ? dowOffset : 0; 
-    var newYear = new Date(currentdate.getFullYear(),0,1);
-    var day = newYear.getDay() - dowOffset; 
-    day = (day >= 0 ? day : day + 7);
-    var daynum = Math.floor((currentdate.getTime() - newYear.getTime() - 
-    (currentdate.getTimezoneOffset()-newYear.getTimezoneOffset())*60000)/86400000) + 1;
-    var weeknum;
-    if(day < 4) {
-        weeknum = Math.floor((daynum+day-1)/7) + 1;
-        if(weeknum > 52) {
-            nYear = new Date(currentdate.getFullYear() + 1,0,1);
-            nday = nYear.getDay() - dowOffset;
-            nday = nday >= 0 ? nday : nday + 7;
-            weeknum = nday < 4 ? 1 : 53;
-        }
-    }
-    else {
-        weeknum = Math.floor((daynum+day-1)/7);
-    }
-    let wee = weeknum + bf;
-    let y = new Date().getFullYear()
-    if (wee <= 0) { 
-        wee = 52+wee;
-        y = y-1
-    };
-    var txt = 'W'+wee+'Y'+y
-    return txt
-};
+function getWeek(week_shift = 0){
+    /* Takes into account today's date and calculates the date with a specific week shift. Returns a string in W00Y0000 format.
+    
+    Use of the DateTime library available on: https://github.com/moment/luxon
+    param number week_shift : offset in number of weeks from the current week 
+    */
+    let date = DateTime.now().plus({ weeks: week_shift });
+    let week = date.weekNumber;
+    let year = date.year;
+    return 'W'+week+'Y'+year;
+}
 
 async function GetConso(e) {
     return new Promise((resolve, reject) => {
-        var transaction = db.transaction(['suivi_conso'], 'readwrite');
-        var objectStore = transaction.objectStore('suivi_conso');
-        var myIndex = objectStore.index('semaine');
+        var transaction = db.transaction(['consumption_tracking'], 'readonly');
+        var objectStore = transaction.objectStore('consumption_tracking');
+        var myIndex = objectStore.index('week');
         var getRequest = myIndex.get(e);
         getRequest.onsuccess = async function() {
             let con;
@@ -53,9 +34,9 @@ async function GetConso(e) {
 }
 async function GetSite() {
     return new Promise((resolve, reject) => {
-        var transaction = db.transaction(['suivi_conso'], 'readwrite');
-        var objectStore = transaction.objectStore('suivi_conso');
-        var myIndex = objectStore.index('semaine');
+        var transaction = db.transaction(['consumption_tracking'], 'readonly');
+        var objectStore = transaction.objectStore('consumption_tracking');
+        var myIndex = objectStore.index('week');
         var getRequest = myIndex.get(getWeek());
         getRequest.onsuccess = async function() {
             let sites;
@@ -69,7 +50,7 @@ async function GetSite() {
     });
 }
 // Ouvrir la BDD; elle sera créée si elle n'existe pas déjà
-let request = window.indexedDB.open('suivi_conso', 1);
+let request = window.indexedDB.open('consumption_tracking', 1);
 request.onerror = function() {
     console.log('Database 2 failed to open');
 };
@@ -78,7 +59,7 @@ request.onsuccess = function() {
     console.log('Database 2 opened successfully');
     // Stocke la base de données ouverte dans la variable db. On l'utilise par la suite
 
-    thelisteconso = Promise.all([
+    Promise.all([
         GetConso(getWeek( 0)),
         GetConso(getWeek(-1)),
         GetConso(getWeek(-2)),
@@ -87,8 +68,8 @@ request.onsuccess = function() {
         GetConso(getWeek(-5))
     ]).then((results) => { graphe(results)});
 
-    thelistesite = Promise.all([GetSite()]).then((results) => {
-        sites = results[0]
+    Promise.all([GetSite()]).then((results) => {
+        let sites = results[0]
         fetch("/../bdd_sites.json")
         .then(mockResponses => {
            return mockResponses.json();
@@ -100,9 +81,9 @@ request.onsuccess = function() {
     function graphe(laliste) {
         var Lsemaine = []
         for (let i=0;i<7;i++){
-            gettruc = getWeek(-i)
-            Y = gettruc.indexOf('Y')
-            sem = gettruc.substring(Y+1)+ ' '+gettruc.substring(0,Y);
+            let gettruc = getWeek(-i)
+            let Y = gettruc.indexOf('Y')
+            let sem = gettruc.substring(Y+1)+ ' '+gettruc.substring(0,Y);
             Lsemaine.push(sem)
         }
         
@@ -161,7 +142,7 @@ request.onsuccess = function() {
         }
         for (let site in sites){
             let i = 0
-            for (categorie in bdd) {
+            for (let categorie in bdd) {
                 if (bdd[categorie].indexOf(site) != -1) {
                     consoparcategorie[categorie] += sites[site]* 9.5367431640625e-7
                 }else{i++}
