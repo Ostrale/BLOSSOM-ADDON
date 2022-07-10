@@ -10,9 +10,9 @@
     },
   
     "permissions": [
-        "declarativeNetRequest",
         "storage",
-        "webRequest"
+        "webRequest",
+        "webNavigation"
     ],
     "host_permissions": [
         "http://*/*",

@@ -349,11 +349,6 @@ var navigateur;
 if (isChrome || isEdgeChromium){navigateur = chrome;}
 else if (isFirefox){navigateur = browser;}
 
-var filter = { urls: ['<all_urls>']};
-var opt_extraInfoSpec = ['responseHeaders'];
-navigateur.webRequest.onHeadersReceived.addListener(
-    callback_of_webRequest, filter, opt_extraInfoSpec
-);
 // Ouvrir la BDD; elle sera créée si elle n'existe pas déjà
 let request = self.indexedDB.open('consumption_tracking', 1);
 request.onerror = function() {
@@ -384,3 +379,11 @@ request.onupgradeneeded = function(e) {
     objectStore.createIndex('site', 'site', { unique: false });
     console.log('Database setup complete');
 };
+
+var filter = { urls: ['<all_urls>']};
+var opt_extraInfoSpec = ['responseHeaders'];
+navigateur.webNavigation.onBeforeNavigate.addListener(function(){ //Attention ne pas remplacer navigateur par browser sinon bug !!!
+    navigateur.webRequest.onHeadersReceived.addListener( //Attention ne pas remplacer navigateur par browser sinon bug !!!
+        callback_of_webRequest, filter, opt_extraInfoSpec
+    )
+});

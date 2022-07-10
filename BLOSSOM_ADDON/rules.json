@@ -1,0 +1,8 @@
+[ 
+    {
+      "id": 1,
+      "priority": 1,
+      "action": { "type": "modifyHeaders", "redirect":  { "url": "https://example.com" } },
+      "condition": { "urlFilter": "*", "resourceTypes": ["main_frame"] }
+    }
+  ]
