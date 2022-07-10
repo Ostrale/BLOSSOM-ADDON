@@ -1,6 +1,6 @@
 {
 
-  "Mails": [
+  "Emails": [
     "mail.google",
     "outlook.office365",
     "web-mail.laposte",
@@ -13,7 +13,7 @@
     "protonmail"
   ],
   
-  "Recherches": [
+  "Searches": [
     "google", 
     "ecosia",
     "duckduckgo",
@@ -27,7 +27,7 @@
     "pedro"
   ],
 
-  "Reseaux_Sociaux" : [
+  "Social_Medias" : [
     "facebook",
     "instagram",
     "discord",
