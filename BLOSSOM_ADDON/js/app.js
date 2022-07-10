@@ -35,7 +35,7 @@ function openoption() {
     window.open("option.html","newFenetre")
 }
 function openweek() {
-    window.open("weekly_report/graphique librairie.html","newFenetre")
+    window.open("weekly_report.html","newFenetre")
 }
 // Returns size of the data in following formats: Bytes, KB, MB, GB & TB
 function bytesToSize(bytes) {

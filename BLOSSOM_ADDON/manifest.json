@@ -12,8 +12,7 @@
     "permissions": [
         "declarativeNetRequest",
         "storage",
-        "webRequest",
-        "alarms"
+        "webRequest"
     ],
     "host_permissions": [
         "http://*/*",
