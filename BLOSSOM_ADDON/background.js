@@ -382,8 +382,7 @@ request.onupgradeneeded = function(e) {
 
 var filter = { urls: ['<all_urls>']};
 var opt_extraInfoSpec = ['responseHeaders'];
-web_browser.webNavigation.onBeforeNavigate.addListener(function(){
-    web_browser.webRequest.onHeadersReceived.addListener( //Do not replace web_browser by browser
-        callback_of_webRequest, filter, opt_extraInfoSpec
+web_browser.webRequest.onHeadersReceived.addListener( //Do not replace web_browser by browser
+    callback_of_webRequest, filter, opt_extraInfoSpec
     )
-});
+;
